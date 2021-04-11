@@ -23,6 +23,10 @@ protected:
     void createLogicalDevice();
     void createSwapChain();
     void createImageViews();
+    void createRenderPass();
+    void createGraphicsPipeline();
+
+    VkShaderModule createShaderModule(const std::vector<char>& code);
 
 private:
     GLFWwindow*                 window_{ nullptr };
@@ -38,4 +42,5 @@ private:
     VkExtent2D                  swapChainExtent_{};
     std::vector<VkImage>        swapChainImages_;
     std::vector<VkImageView>    swapChainImageViews_;
+    VkPipelineLayout            pipelineLayout_{};
 };
