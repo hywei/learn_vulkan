@@ -22,10 +22,7 @@ protected:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapChain();
-
-    //VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
-    //VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
-
+    void createImageViews();
 
 private:
     GLFWwindow*                 window_{ nullptr };
@@ -37,7 +34,8 @@ private:
     VkQueue                     presentQueue_{};
     VkSurfaceKHR                surface_{};
     VkSwapchainKHR              swapChain_{};
-    std::vector<VkImage>        swapChainImages_{};
     VkFormat                    swapChainImageFormat_{};
     VkExtent2D                  swapChainExtent_{};
+    std::vector<VkImage>        swapChainImages_;
+    std::vector<VkImageView>    swapChainImageViews_;
 };
