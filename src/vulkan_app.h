@@ -42,5 +42,7 @@ private:
     VkExtent2D                  swapChainExtent_{};
     std::vector<VkImage>        swapChainImages_;
     std::vector<VkImageView>    swapChainImageViews_;
+    VkRenderPass                renderPass_{};
     VkPipelineLayout            pipelineLayout_{};
+    VkPipeline                  graphicsPipeline_{};
 };
