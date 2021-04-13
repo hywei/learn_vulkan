@@ -4,15 +4,12 @@
 #include "vulkan_config.h"
 #include "vulkan_utils.h"
 
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
 #include <cstdint>
-#include <vector>
+#include <iostream>
 #include <optional>
-#include <algorithm>
 #include <set>
-
+#include <stdexcept>
+#include <vector>
 
 void VulkanApp::run()
 {
@@ -63,8 +60,15 @@ void VulkanApp::mainLoop()
 
 void VulkanApp::cleanup()
 {
-    vkDestroySemaphore(device_, renderFinishedSemaphore_, nullptr);
-    vkDestroySemaphore(device_, imageAvailableSemaphore_, nullptr);
+    for (auto& renderFinishedSemaphore : renderFinishedSemaphores_)
+    {
+        vkDestroySemaphore(device_, renderFinishedSemaphore, nullptr);
+    }
+
+    for(auto& imageAvailableSemaphore : imageAvailableSemaphores_)
+    {
+        vkDestroySemaphore(device_, imageAvailableSemaphore, nullptr);
+    }
 
     vkDestroyCommandPool(device_, commandPool_, nullptr);
 
@@ -531,13 +535,13 @@ void VulkanApp::createFrameBuffers()
         VkImageView attachments[] = { swapChainImageViews_[index] };
 
         VkFramebufferCreateInfo frameBufferInfo{};
-        frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        frameBufferInfo.renderPass = renderPass_;
+        frameBufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        frameBufferInfo.renderPass      = renderPass_;
         frameBufferInfo.attachmentCount = 1;
-        frameBufferInfo.pAttachments = attachments;
-        frameBufferInfo.width = swapChainExtent_.width;
-        frameBufferInfo.height = swapChainExtent_.height;
-        frameBufferInfo.layers = 1;
+        frameBufferInfo.pAttachments    = attachments;
+        frameBufferInfo.width           = swapChainExtent_.width;
+        frameBufferInfo.height          = swapChainExtent_.height;
+        frameBufferInfo.layers          = 1;
 
         if (vkCreateFramebuffer(device_, &frameBufferInfo, nullptr, &swapChainFrameBuffers_[index]) != VK_SUCCESS)
         {
@@ -551,9 +555,9 @@ void VulkanApp::createCommandPool()
     QueueFamilyIndices queueFamilyIndices = VulkanUtils::findQueueFamilies(physicalDevice_, surface_);
 
     VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-    poolInfo.flags = 0;
+    poolInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex   = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.flags              = 0;
 
     if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool_) != VK_SUCCESS)
     {
@@ -566,10 +570,10 @@ void VulkanApp::createCommandBuffers()
     commandBuffers_.resize(swapChainFrameBuffers_.size());
 
     VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool_;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers_.size());
+    allocInfo.sType                 = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool           = commandPool_;
+    allocInfo.level                 = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount    = static_cast<uint32_t>(commandBuffers_.size());
 
     if (vkAllocateCommandBuffers(device_, &allocInfo, commandBuffers_.data()) != VK_SUCCESS)
     {
@@ -579,9 +583,9 @@ void VulkanApp::createCommandBuffers()
     for (size_t index = 0; index < commandBuffers_.size(); index++)
     {
         VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;
-        beginInfo.pInheritanceInfo = nullptr;
+        beginInfo.sType             = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags             = 0;// VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        beginInfo.pInheritanceInfo  = nullptr;
 
         if (vkBeginCommandBuffer(commandBuffers_[index], &beginInfo) != VK_SUCCESS)
         {
@@ -591,13 +595,13 @@ void VulkanApp::createCommandBuffers()
         VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
         VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass_;
-        renderPassInfo.framebuffer = swapChainFrameBuffers_[index];
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = swapChainExtent_;
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+        renderPassInfo.sType                = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass           = renderPass_;
+        renderPassInfo.framebuffer          = swapChainFrameBuffers_[index];
+        renderPassInfo.renderArea.offset    = { 0, 0 };
+        renderPassInfo.renderArea.extent    = swapChainExtent_;
+        renderPassInfo.clearValueCount      = 1;
+        renderPassInfo.pClearValues         = &clearColor;
 
         vkCmdBeginRenderPass(commandBuffers_[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -615,18 +619,26 @@ void VulkanApp::createCommandBuffers()
 
 void VulkanApp::createSemaphores()
 {
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    imageAvailableSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
 
-    if (vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &imageAvailableSemaphore_) != VK_SUCCESS ||
-        vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &renderFinishedSemaphore_) != VK_SUCCESS)
+    for(size_t index = 0; index < MAX_FRAMES_IN_FLIGHT; index++)
     {
-        throw std::runtime_error("Failed to create semaphores");
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &imageAvailableSemaphores_[index]) != VK_SUCCESS ||
+            vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores_[index]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create semaphores");
+        }
+
     }
+
 }
 
 
-VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code)
+VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) const
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -645,11 +657,11 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code)
 void VulkanApp::drawFrame()
 {
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device_, swapChain_, UINT64_MAX, imageAvailableSemaphore_, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(device_, swapChain_, UINT64_MAX, imageAvailableSemaphores_[currentFrameIndex_], VK_NULL_HANDLE, &imageIndex);
 
-    VkSemaphore waitSemaphores[] = { imageAvailableSemaphore_ };
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphore_ };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore waitSemaphores[]        = { imageAvailableSemaphores_[currentFrameIndex_] };
+    VkSemaphore signalSemaphores[]      = { renderFinishedSemaphores_[currentFrameIndex_] };
+    VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -679,4 +691,5 @@ void VulkanApp::drawFrame()
 
     vkQueuePresentKHR(presentQueue_, &presentInfo);
 
+    currentFrameIndex_ = (currentFrameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
 }

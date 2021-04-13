@@ -7,8 +7,9 @@
 class VulkanApp
 {
 public:
-    virtual void run();
+    virtual ~VulkanApp() = default;
 
+    virtual void run();
 
 protected:
     void initWindow();
@@ -30,7 +31,7 @@ protected:
     void createCommandBuffers();
     void createSemaphores();
 
-    VkShaderModule createShaderModule(const std::vector<char>& code);
+    VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
     void drawFrame();
 
@@ -54,6 +55,7 @@ private:
     VkPipeline                      graphicsPipeline_{};
     VkCommandPool                   commandPool_{};
     std::vector<VkCommandBuffer>    commandBuffers_;
-    VkSemaphore                     imageAvailableSemaphore_{};
-    VkSemaphore                     renderFinishedSemaphore_{};
+    std::vector<VkSemaphore>        imageAvailableSemaphores_{};
+    std::vector<VkSemaphore>        renderFinishedSemaphores_{};
+    size_t                          currentFrameIndex_{ 0 };
 };

@@ -1,7 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include <iostream>
-#include <stdexcept>
 #include "vulkan_app.h"
 
 
