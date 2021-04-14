@@ -29,7 +29,7 @@ protected:
     void createFrameBuffers();
     void createCommandPool();
     void createCommandBuffers();
-    void createSemaphores();
+    void createSyncObjects();
 
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
@@ -57,5 +57,7 @@ private:
     std::vector<VkCommandBuffer>    commandBuffers_;
     std::vector<VkSemaphore>        imageAvailableSemaphores_{};
     std::vector<VkSemaphore>        renderFinishedSemaphores_{};
+    std::vector<VkFence>            inFlightFences_{};
+    std::vector<VkFence>            imagesInFlight_{};
     size_t                          currentFrameIndex_{ 0 };
 };

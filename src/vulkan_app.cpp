@@ -44,7 +44,7 @@ void VulkanApp::initVulkan()
     createFrameBuffers();
     createCommandPool();
     createCommandBuffers();
-    createSemaphores();
+    createSyncObjects();
 }
 
 void VulkanApp::mainLoop()
@@ -60,14 +60,11 @@ void VulkanApp::mainLoop()
 
 void VulkanApp::cleanup()
 {
-    for (auto& renderFinishedSemaphore : renderFinishedSemaphores_)
+    for (size_t index = 0; index < MAX_FRAMES_IN_FLIGHT; index++)
     {
-        vkDestroySemaphore(device_, renderFinishedSemaphore, nullptr);
-    }
-
-    for(auto& imageAvailableSemaphore : imageAvailableSemaphores_)
-    {
-        vkDestroySemaphore(device_, imageAvailableSemaphore, nullptr);
+        vkDestroySemaphore(device_, renderFinishedSemaphores_[index], nullptr);
+        vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
+        vkDestroyFence(device_, inFlightFences_[index], nullptr);
     }
 
     vkDestroyCommandPool(device_, commandPool_, nullptr);
@@ -617,20 +614,27 @@ void VulkanApp::createCommandBuffers()
     }
 }
 
-void VulkanApp::createSemaphores()
+void VulkanApp::createSyncObjects()
 {
     imageAvailableSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences_.resize(MAX_FRAMES_IN_FLIGHT);
+    imagesInFlight_.resize(swapChainImages_.size(), VK_NULL_HANDLE);
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for(size_t index = 0; index < MAX_FRAMES_IN_FLIGHT; index++)
     {
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
         if (vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &imageAvailableSemaphores_[index]) != VK_SUCCESS ||
-            vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores_[index]) != VK_SUCCESS)
+            vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores_[index]) != VK_SUCCESS ||
+            vkCreateFence(device_, &fenceInfo, nullptr, &inFlightFences_[index]) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to create semaphores");
+            throw std::runtime_error("Failed to create syncronization objects for a frame");
         }
 
     }
@@ -656,12 +660,24 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) cons
 
 void VulkanApp::drawFrame()
 {
+    vkWaitForFences(device_, 1, &inFlightFences_[currentFrameIndex_], VK_TRUE, UINT16_MAX);
+
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device_, swapChain_, UINT64_MAX, imageAvailableSemaphores_[currentFrameIndex_], VK_NULL_HANDLE, &imageIndex);
+
+    // Check if a previous frame is using this image (i.e. there is its fence to wait on)
+    if (imagesInFlight_[imageIndex] != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(device_, 1, &imagesInFlight_[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    // Mark the image as now being in use by this frame
+    imagesInFlight_[imageIndex] = inFlightFences_[currentFrameIndex_];
 
     VkSemaphore waitSemaphores[]        = { imageAvailableSemaphores_[currentFrameIndex_] };
     VkSemaphore signalSemaphores[]      = { renderFinishedSemaphores_[currentFrameIndex_] };
     VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    vkResetFences(device_, 1, &inFlightFences_[currentFrameIndex_]);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -673,7 +689,7 @@ void VulkanApp::drawFrame()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = signalSemaphores;
 
-    if (vkQueueSubmit(graphicsQueue_, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    if (vkQueueSubmit(graphicsQueue_, 1, &submitInfo, inFlightFences_[currentFrameIndex_]) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
