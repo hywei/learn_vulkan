@@ -4,13 +4,14 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
-#include <stdexcept>
 #include <cstdint>
 #include <vector>
 #include <optional>
 #include <algorithm>
 #include <set>
 #include <fstream>
+
+#include "foundation/log/log_system.h"
 
 struct QueueFamilyIndices
 {
@@ -272,7 +273,7 @@ public:
 
         if (!file.is_open())
         {
-            throw std::runtime_error("Failed to open file!");
+            LOG_FATAL("Failed to open file!");
         }
 
         const size_t fileSize = static_cast<size_t>(file.tellg());

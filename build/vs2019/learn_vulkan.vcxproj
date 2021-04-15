@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\foundation\log\log_system.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\render\backend\vulkan\vulkan_app.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\foundation\log\log_system.h" />
     <ClInclude Include="..\..\src\foundation\math\vec3.h" />
     <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_app.h" />
     <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_config.h" />
@@ -98,7 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\spdlog\include;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;$(SolutionDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -116,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\spdlog\include;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;$(SolutionDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\spdlog\include;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;$(SolutionDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -152,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)..\..\3rd_lib\glm;$(SolutionDir)..\..\3rd_lib\spdlog\include;$(SolutionDir)..\..\3rd_lib\glfw-3.3.3.bin.WIN64\include;$(SolutionDir)..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>

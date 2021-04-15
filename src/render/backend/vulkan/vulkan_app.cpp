@@ -8,7 +8,6 @@
 #include <iostream>
 #include <optional>
 #include <set>
-#include <stdexcept>
 #include <vector>
 
 void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
@@ -116,7 +115,7 @@ void VulkanApp::createInstance()
 {
     if (gEnableValidationLayers && !VulkanUtils::checkValidationLayerSupport(gValidationLayers))
     {
-        throw std::runtime_error("validataion layers requested, but not available!");
+        LOG_FATAL("validataion layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
@@ -153,7 +152,7 @@ void VulkanApp::createInstance()
 
     if (vkCreateInstance(&createInfo, nullptr, &instance_) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to create instance!");
+        LOG_FATAL("failed to create instance!");
     }
 
     uint32_t vkExtensionCount = 0;
@@ -161,10 +160,10 @@ void VulkanApp::createInstance()
     std::vector<VkExtensionProperties> vkExtensions(vkExtensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, vkExtensions.data());
 
-    std::cout << "Available Extensions: " << vkExtensionCount << "\n";
+     LOG_INFO("Available Extensions: {}", vkExtensionCount);
     for (const auto& vkExtension : vkExtensions)
     {
-        std::cout << "\t" << vkExtension.extensionName << "\n";
+        LOG_INFO("    {}", vkExtension.extensionName);
     }
 }
 
@@ -177,7 +176,7 @@ void VulkanApp::setupDebugMessenger()
 
     if (VulkanUtils::CreateDebugUtilsMessengerEXT(instance_, &createInfo, nullptr, &debugMessenger_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to set up debug messenger!");
+        LOG_FATAL("Failed to set up debug messenger!");
     }
 
 }
@@ -186,7 +185,7 @@ void VulkanApp::createSurface()
 {
     if (glfwCreateWindowSurface(instance_, window_, nullptr, &surface_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create window surface!");
+        LOG_FATAL("Failed to create window surface!");
     }
 }
 
@@ -196,7 +195,7 @@ void VulkanApp::pickPhysicalDevice()
     vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
     if (deviceCount == 0)
     {
-        throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+        LOG_FATAL("Failed to find GPUs with Vulkan support!");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -212,7 +211,7 @@ void VulkanApp::pickPhysicalDevice()
 
     if (physicalDevice_ == VK_NULL_HANDLE)
     {
-        throw std::runtime_error("Failed to find a suitable GPU");
+        LOG_FATAL("Failed to find a suitable GPU");
     }
 
 }
@@ -259,7 +258,7 @@ void VulkanApp::createLogicalDevice()
 
     if (vkCreateDevice(physicalDevice_, &deviceCreateInfo, nullptr, &device_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create Logical Device");
+        LOG_FATAL("Failed to create Logical Device");
     }
 
     vkGetDeviceQueue(device_, indices.graphicsFamily.value(), 0, &graphicsQueue_);
@@ -310,7 +309,7 @@ void VulkanApp::createSwapChain()
 
     if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapChain_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create swap chain!");
+        LOG_FATAL("Failed to create swap chain!");
     }
 
     vkGetSwapchainImagesKHR(device_, swapChain_, &imageCount, nullptr);
@@ -344,7 +343,7 @@ void VulkanApp::createImageViews()
 
         if (vkCreateImageView(device_, &createInfo, nullptr, &swapChainImageViews_[index]) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to create image views");
+            LOG_FATAL("Failed to create image views");
         }
     }
 }
@@ -389,7 +388,7 @@ void VulkanApp::createRenderPass()
 
     if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create render pass");
+        LOG_FATAL("Failed to create render pass");
     }
 }
 
@@ -505,7 +504,7 @@ void VulkanApp::createGraphicsPipeline()
 
     if (vkCreatePipelineLayout(device_, &pipelineLayoutInfo, nullptr, &pipelineLayout_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create pipeline layout!");
+        LOG_FATAL("Failed to create pipeline layout!");
     }
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -528,7 +527,7 @@ void VulkanApp::createGraphicsPipeline()
 
     if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create graphics pipeline!");
+        LOG_FATAL("Failed to create graphics pipeline!");
     }
 
     vkDestroyShaderModule(device_, fragShaderModule, nullptr);
@@ -554,7 +553,7 @@ void VulkanApp::createFrameBuffers()
 
         if (vkCreateFramebuffer(device_, &frameBufferInfo, nullptr, &swapChainFrameBuffers_[index]) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to create framebuffer");
+            LOG_FATAL("Failed to create framebuffer");
         }
     }
 }
@@ -570,7 +569,7 @@ void VulkanApp::createCommandPool()
 
     if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool_) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create command pool!");
+        LOG_FATAL("Failed to create command pool!");
     }
 }
 
@@ -586,7 +585,7 @@ void VulkanApp::createCommandBuffers()
 
     if (vkAllocateCommandBuffers(device_, &allocInfo, commandBuffers_.data()) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to allocate command buffers!");
+        LOG_FATAL("Failed to allocate command buffers!");
     }
 
     for (size_t index = 0; index < commandBuffers_.size(); index++)
@@ -598,7 +597,7 @@ void VulkanApp::createCommandBuffers()
 
         if (vkBeginCommandBuffer(commandBuffers_[index], &beginInfo) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to begin recording command buffer!");
+            LOG_FATAL("Failed to begin recording command buffer!");
         }
 
         VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -621,7 +620,7 @@ void VulkanApp::createCommandBuffers()
 
         if (vkEndCommandBuffer(commandBuffers_[index]) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to record command buffer");
+            LOG_FATAL("Failed to record command buffer");
         }
     }
 }
@@ -646,7 +645,7 @@ void VulkanApp::createSyncObjects()
             vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores_[index]) != VK_SUCCESS ||
             vkCreateFence(device_, &fenceInfo, nullptr, &inFlightFences_[index]) != VK_SUCCESS)
         {
-            throw std::runtime_error("Failed to create syncronization objects for a frame");
+            LOG_FATAL("Failed to create syncronization objects for a frame");
         }
 
     }
@@ -687,7 +686,7 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) cons
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device_, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create shader module");
+        LOG_FATAL("Failed to create shader module");
     }
 
     return shaderModule;
@@ -726,7 +725,7 @@ void VulkanApp::drawFrame()
 
     if (vkQueueSubmit(graphicsQueue_, 1, &submitInfo, inFlightFences_[currentFrameIndex_]) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to submit draw command buffer");
+        LOG_FATAL("Failed to submit draw command buffer");
     }
 
     VkSwapchainKHR swapChains[] = { swapChain_ };
@@ -747,7 +746,7 @@ void VulkanApp::drawFrame()
         recreateSwapChain();
     }else if(presentResult != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to presnet swap chain image");
+        LOG_FATAL("Failed to presnet swap chain image");
     }
 
     currentFrameIndex_ = (currentFrameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;

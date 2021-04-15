@@ -24,6 +24,9 @@
     <Filter Include="src\render\backend\vulkan">
       <UniqueIdentifier>{d5ef08ee-f1bf-412b-9f14-faf9807c61e9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\foundation\log">
+      <UniqueIdentifier>{a286c443-2bf1-4cce-962a-46cfd5d5d235}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -31,6 +34,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\render\backend\vulkan\vulkan_app.cpp">
       <Filter>src\render\backend\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\foundation\log\log_system.cpp">
+      <Filter>src\foundation\log</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +51,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_utils.h">
       <Filter>src\render\backend\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\foundation\log\log_system.h">
+      <Filter>src\foundation\log</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
