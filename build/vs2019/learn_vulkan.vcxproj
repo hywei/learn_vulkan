@@ -20,12 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp" />
-    <ClCompile Include="..\..\src\vulkan_app.cpp" />
+    <ClCompile Include="..\..\src\render\backend\vulkan\vulkan_app.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\vulkan_app.h" />
-    <ClInclude Include="..\..\src\vulkan_config.h" />
-    <ClInclude Include="..\..\src\vulkan_utils.h" />
+    <ClInclude Include="..\..\src\foundation\math\vec3.h" />
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_app.h" />
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_config.h" />
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -9,24 +9,42 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="src\foundation">
+      <UniqueIdentifier>{ba905ddf-9aa5-4689-bbcb-32dc55e405ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\foundation\math">
+      <UniqueIdentifier>{324cf7ca-1247-4d89-a3b4-748d465e08ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\render">
+      <UniqueIdentifier>{6863cd4f-f9de-4b5d-a864-0b593a05b40f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\render\backend">
+      <UniqueIdentifier>{b109a4bd-f37f-4e70-89f9-d1c5df543708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\render\backend\vulkan">
+      <UniqueIdentifier>{d5ef08ee-f1bf-412b-9f14-faf9807c61e9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\vulkan_app.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\src\render\backend\vulkan\vulkan_app.cpp">
+      <Filter>src\render\backend\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\vulkan_config.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\..\src\foundation\math\vec3.h">
+      <Filter>src\foundation\math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\vulkan_utils.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_app.h">
+      <Filter>src\render\backend\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\vulkan_app.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_config.h">
+      <Filter>src\render\backend\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\render\backend\vulkan\vulkan_utils.h">
+      <Filter>src\render\backend\vulkan</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
