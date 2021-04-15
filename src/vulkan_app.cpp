@@ -11,6 +11,12 @@
 #include <stdexcept>
 #include <vector>
 
+void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
+{
+    auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(windows));
+    app->frameBufferResized_ = true;
+}
+
 void VulkanApp::run()
 {
     initWindow();
@@ -24,10 +30,10 @@ void VulkanApp::initWindow()
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     window_ = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetFramebufferSizeCallback(window_, frameBufferResizeCallback);
 }
 
 void VulkanApp::initVulkan()
@@ -58,21 +64,13 @@ void VulkanApp::mainLoop()
     vkDeviceWaitIdle(device_);
 }
 
-void VulkanApp::cleanup()
+void VulkanApp::cleanupSwapChain()
 {
-    for (size_t index = 0; index < MAX_FRAMES_IN_FLIGHT; index++)
-    {
-        vkDestroySemaphore(device_, renderFinishedSemaphores_[index], nullptr);
-        vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
-        vkDestroyFence(device_, inFlightFences_[index], nullptr);
-    }
-
-    vkDestroyCommandPool(device_, commandPool_, nullptr);
-
     for (auto framebuffer : swapChainFrameBuffers_)
     {
         vkDestroyFramebuffer(device_, framebuffer, nullptr);
     }
+    vkFreeCommandBuffers(device_, commandPool_, static_cast<uint32_t>(commandBuffers_.size()), commandBuffers_.data());
 
     vkDestroyPipeline(device_, graphicsPipeline_, nullptr);
     vkDestroyPipelineLayout(device_, pipelineLayout_, nullptr);
@@ -84,6 +82,20 @@ void VulkanApp::cleanup()
     }
 
     vkDestroySwapchainKHR(device_, swapChain_, nullptr);
+}
+
+void VulkanApp::cleanup()
+{
+    cleanupSwapChain();
+
+    for (size_t index = 0; index < MAX_FRAMES_IN_FLIGHT; index++)
+    {
+        vkDestroySemaphore(device_, renderFinishedSemaphores_[index], nullptr);
+        vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
+        vkDestroyFence(device_, inFlightFences_[index], nullptr);
+    }
+
+    vkDestroyCommandPool(device_, commandPool_, nullptr);
 
     vkDestroyDevice(device_, nullptr);
 
@@ -641,6 +653,29 @@ void VulkanApp::createSyncObjects()
 
 }
 
+void VulkanApp::recreateSwapChain()
+{
+    // handle minimization
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window_, &width, &height);
+    while(width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(window_, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(device_);
+
+    cleanupSwapChain();
+
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+    createGraphicsPipeline();
+    createFrameBuffers();
+    createCommandBuffers();
+}
+
 
 VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) const
 {
@@ -705,7 +740,15 @@ void VulkanApp::drawFrame()
     presentInfo.pImageIndices       = &imageIndex;
     presentInfo.pResults            = nullptr;
 
-    vkQueuePresentKHR(presentQueue_, &presentInfo);
+    const VkResult presentResult = vkQueuePresentKHR(presentQueue_, &presentInfo);
+    if(presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || frameBufferResized_)
+    {
+        frameBufferResized_ = false;
+        recreateSwapChain();
+    }else if(presentResult != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to presnet swap chain image");
+    }
 
     currentFrameIndex_ = (currentFrameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
 }

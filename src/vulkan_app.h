@@ -15,8 +15,12 @@ protected:
     void initWindow();
     void initVulkan();
     void mainLoop();
+
+    // release resources
+    void cleanupSwapChain();
     void cleanup();;
 
+    // create resources
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -31,10 +35,13 @@ protected:
     void createCommandBuffers();
     void createSyncObjects();
 
+    void recreateSwapChain();
+
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
     void drawFrame();
 
+    static void frameBufferResizeCallback(GLFWwindow* windows, int width, int height);
 private:
     GLFWwindow*                     window_{ nullptr };
     VkInstance                      instance_{};
@@ -60,4 +67,5 @@ private:
     std::vector<VkFence>            inFlightFences_{};
     std::vector<VkFence>            imagesInFlight_{};
     size_t                          currentFrameIndex_{ 0 };
+    bool                            frameBufferResized_{ false };
 };
