@@ -47,6 +47,7 @@ void VulkanApp::initVulkan()
     createGraphicsPipeline();
     createFrameBuffers();
     createCommandPool();
+    createVertexBuffers();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -86,6 +87,9 @@ void VulkanApp::cleanup()
         vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
         vkDestroyFence(device_, inFlightFences_[index], nullptr);
     }
+
+    vkDestroyBuffer(device_, vertexBuffer_, nullptr);
+    vkFreeMemory(device_, vertexBufferMemory_, nullptr);
 
     vkDestroyCommandPool(device_, commandPool_, nullptr);
 
@@ -165,7 +169,10 @@ void VulkanApp::setupDebugMessenger()
 
 void VulkanApp::createSurface()
 {
-    if (glfwCreateWindowSurface(instance_, window_, nullptr, &surface_) != VK_SUCCESS) { LOG_FATAL("Failed to create window surface!"); }
+    if (glfwCreateWindowSurface(instance_, window_, nullptr, &surface_) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create window surface!");
+    }
 }
 
 void VulkanApp::pickPhysicalDevice()
@@ -195,7 +202,7 @@ void VulkanApp::createLogicalDevice()
     const float queuePriority = 1.f;
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t>                   uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
@@ -241,7 +248,7 @@ void VulkanApp::createSwapChain()
     const SwapChainSupportDetails swapChainSupport = VulkanUtils::querySwapChainSupport(physicalDevice_, surface_);
     const VkSurfaceFormatKHR      surfaceFormat    = VulkanUtils::chooseSwapSurfaceFormat(swapChainSupport.formats);
     const VkPresentModeKHR        presentMode      = VulkanUtils::chooseSwapPresentMode(swapChainSupport.presentModes);
-    const VkExtent2D              extent           = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
+    const VkExtent2D              extent = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -278,7 +285,10 @@ void VulkanApp::createSwapChain()
     createInfo.clipped        = VK_TRUE;
     createInfo.oldSwapchain   = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapChain_) != VK_SUCCESS) { LOG_FATAL("Failed to create swap chain!"); }
+    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapChain_) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create swap chain!");
+    }
 
     vkGetSwapchainImagesKHR(device_, swapChain_, &imageCount, nullptr);
     swapChainImages_.resize(imageCount);
@@ -354,7 +364,10 @@ void VulkanApp::createRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies   = &dependency;
 
-    if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS) { LOG_FATAL("Failed to create render pass"); }
+    if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create render pass");
+    }
 }
 
 void VulkanApp::createGraphicsPipeline()
@@ -536,7 +549,37 @@ void VulkanApp::createCommandPool()
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
     poolInfo.flags            = 0;
 
-    if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool_) != VK_SUCCESS) { LOG_FATAL("Failed to create command pool!"); }
+    if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool_) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create command pool!");
+    }
+}
+
+void VulkanApp::createVertexBuffers()
+{
+    const std::vector<Vertex> vertices = {
+        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+    const VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    VkBuffer       stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    createBuffer(bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer,
+                 stagingBufferMemory);
+    void* data;
+    vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(device_, stagingBufferMemory);
+
+    createBuffer(bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 vertexBuffer_,
+                 vertexBufferMemory_);
 }
 
 void VulkanApp::createCommandBuffers()
@@ -580,6 +623,12 @@ void VulkanApp::createCommandBuffers()
         vkCmdBeginRenderPass(commandBuffers_[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffers_[index], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline_);
+
+        VkBuffer     vertexBufffers[] = {vertexBuffer_};
+        VkDeviceSize offsets[]        = {0};
+
+        vkCmdBindVertexBuffers(commandBuffers_[index], 0, 1, vertexBufffers, offsets);
+
         vkCmdDraw(commandBuffers_[index], 3, 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers_[index]);
@@ -593,7 +642,7 @@ void VulkanApp::createSyncObjects()
     imageAvailableSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores_.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences_.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight_.resize(swapChainImages_.size(), VK_NULL_HANDLE);
+    imagesInFlight_.resize(swapChainImages_.size(), nullptr);
 
     VkSemaphoreCreateInfo semaphoreInfo {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -644,9 +693,87 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) cons
     createInfo.pCode    = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device_, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) { LOG_FATAL("Failed to create shader module"); }
+    if (vkCreateShaderModule(device_, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create shader module");
+    }
 
     return shaderModule;
+}
+
+void VulkanApp::createBuffer(VkDeviceSize          size,
+                             VkBufferUsageFlags    usage,
+                             VkMemoryPropertyFlags properties,
+                             VkBuffer&             buffer,
+                             VkDeviceMemory&       bufferMemory) const
+{
+    VkBufferCreateInfo bufferInfo {};
+    bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size        = size;
+    bufferInfo.usage       = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) { LOG_FATAL("Failed to create buffer"); }
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(device_, buffer, &memoryRequirements);
+
+    VkMemoryAllocateInfo allocInfo {};
+    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize  = memoryRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+    {
+        LOG_FATAL("Falied to allocate buffer memory");
+    }
+
+    vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+}
+
+void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+    VkCommandBufferAllocateInfo allocInfo {};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool        = commandPool_;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion {};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size      = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(commandBuffer);
+}
+
+uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
+{
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &memoryProperties);
+
+    for (uint32_t index = 0; index < memoryProperties.memoryTypeCount; index++)
+    {
+        if ((typeFilter & (1 << index)) &&
+            (memoryProperties.memoryTypes[index].propertyFlags & properties) == properties)
+        {
+            return index;
+        }
+    }
+
+    LOG_FATAL("Failed to find suitable memory type!");
+
+    return 0;
 }
 
 void VulkanApp::drawFrame()
@@ -654,10 +781,14 @@ void VulkanApp::drawFrame()
     vkWaitForFences(device_, 1, &inFlightFences_[currentFrameIndex_], VK_TRUE, UINT16_MAX);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device_, swapChain_, UINT64_MAX, imageAvailableSemaphores_[currentFrameIndex_], VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(
+        device_, swapChain_, UINT64_MAX, imageAvailableSemaphores_[currentFrameIndex_], VK_NULL_HANDLE, &imageIndex);
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
-    if (imagesInFlight_[imageIndex] != VK_NULL_HANDLE) { vkWaitForFences(device_, 1, &imagesInFlight_[imageIndex], VK_TRUE, UINT64_MAX); }
+    if (imagesInFlight_[imageIndex] != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(device_, 1, &imagesInFlight_[imageIndex], VK_TRUE, UINT64_MAX);
+    }
     // Mark the image as now being in use by this frame
     imagesInFlight_[imageIndex] = inFlightFences_[currentFrameIndex_];
 
