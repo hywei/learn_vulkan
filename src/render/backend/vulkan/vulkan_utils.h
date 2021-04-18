@@ -273,24 +273,6 @@ public:
         return details;
     }
 
-    static void dumpQueueFamilyInfo(VkPhysicalDevice physicalDevice)
-    {
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-        
-        LOG_INFO("Queue Family Count: {}", queueFamilyCount);
-
-        for (const auto& property : queueFamilies) 
-        {
-            LOG_INFO("\tQueue Count: {:2}, Queue Flags: {}",
-                     property.queueCount,
-                     VK_TO_STRING(VkQueueFlags, property.queueFlags));
-        }
-
-    }
-
     static std::vector<char> readFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -324,6 +306,35 @@ public:
         }
 
         return str;
+    }
+
+    static void dumpQueueFamilyInfo(VkPhysicalDevice physicalDevice)
+    {
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+        LOG_INFO("Queue Family Count: {}", queueFamilyCount);
+
+        for (const auto& property : queueFamilies)
+        {
+            LOG_INFO("\tQueue Count: {:2}, Queue Flags: {}",
+                     property.queueCount,
+                     VK_TO_STRING(VkQueueFlags, property.queueFlags));
+        }
+    }
+
+    static void dumpExtensionInfo() 
+    {
+        uint32_t vkExtensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, nullptr);
+        std::vector<VkExtensionProperties> vkExtensions(vkExtensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, vkExtensions.data());
+
+        LOG_INFO("Available Extensions: {}", vkExtensionCount);
+        for (const auto& vkExtension : vkExtensions) { LOG_INFO("\t{}", vkExtension.extensionName); }
+
     }
 };
 

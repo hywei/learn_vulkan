@@ -32,7 +32,8 @@ protected:
     void createGraphicsPipeline();
     void createFrameBuffers();
     void createCommandPool();
-    void createVertexBuffers();
+    void createVertexBuffer();
+    void createIndexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
 
@@ -73,6 +74,8 @@ private:
     VkCommandPool                commandPool_ {};
     VkBuffer                     vertexBuffer_ {};
     VkDeviceMemory               vertexBufferMemory_ {};
+    VkBuffer                     indexBuffer_ {};
+    VkDeviceMemory               indexBufferMemory_ {};
     std::vector<VkCommandBuffer> commandBuffers_;
     std::vector<VkSemaphore>     imageAvailableSemaphores_ {};
     std::vector<VkSemaphore>     renderFinishedSemaphores_ {};

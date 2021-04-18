@@ -9,6 +9,13 @@
 #include <set>
 #include <vector>
 
+const std::vector<Vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+
 void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
 {
     auto app                 = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(windows));
@@ -47,10 +54,12 @@ void VulkanApp::initVulkan()
     createGraphicsPipeline();
     createFrameBuffers();
     createCommandPool();
-    createVertexBuffers();
+    createVertexBuffer();
+    createIndexBuffer();
     createCommandBuffers();
     createSyncObjects();
 
+    VulkanUtils::dumpExtensionInfo();
     VulkanUtils::dumpQueueFamilyInfo(physicalDevice_);
 }
 
@@ -89,6 +98,9 @@ void VulkanApp::cleanup()
         vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
         vkDestroyFence(device_, inFlightFences_[index], nullptr);
     }
+
+    vkDestroyBuffer(device_, indexBuffer_, nullptr);
+    vkFreeMemory(device_, indexBufferMemory_, nullptr);
 
     vkDestroyBuffer(device_, vertexBuffer_, nullptr);
     vkFreeMemory(device_, vertexBufferMemory_, nullptr);
@@ -146,14 +158,6 @@ void VulkanApp::createInstance()
     }
 
     if (vkCreateInstance(&createInfo, nullptr, &instance_) != VK_SUCCESS) { LOG_FATAL("failed to create instance!"); }
-
-    uint32_t vkExtensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, nullptr);
-    std::vector<VkExtensionProperties> vkExtensions(vkExtensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, vkExtensions.data());
-
-    LOG_INFO("Available Extensions: {}", vkExtensionCount);
-    for (const auto& vkExtension : vkExtensions) { LOG_INFO("\t{}", vkExtension.extensionName); }
 }
 
 void VulkanApp::setupDebugMessenger()
@@ -250,7 +254,7 @@ void VulkanApp::createSwapChain()
     const SwapChainSupportDetails swapChainSupport = VulkanUtils::querySwapChainSupport(physicalDevice_, surface_);
     const VkSurfaceFormatKHR      surfaceFormat    = VulkanUtils::chooseSwapSurfaceFormat(swapChainSupport.formats);
     const VkPresentModeKHR        presentMode      = VulkanUtils::chooseSwapPresentMode(swapChainSupport.presentModes);
-    const VkExtent2D              extent = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
+    const VkExtent2D              extent           = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -557,11 +561,8 @@ void VulkanApp::createCommandPool()
     }
 }
 
-void VulkanApp::createVertexBuffers()
+void VulkanApp::createVertexBuffer()
 {
-    const std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-
     const VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer       stagingBuffer;
@@ -584,6 +585,36 @@ void VulkanApp::createVertexBuffers()
                  vertexBufferMemory_);
 
     copyBuffer(stagingBuffer, vertexBuffer_, bufferSize);
+
+    vkDestroyBuffer(device_, stagingBuffer, nullptr);
+    vkFreeMemory(device_, stagingBufferMemory, nullptr);
+}
+
+void VulkanApp::createIndexBuffer()
+{
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    VkBuffer       stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    createBuffer(bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer,
+                 stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(device_, stagingBufferMemory);
+
+    createBuffer(bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 indexBuffer_,
+                 indexBufferMemory_);
+
+    copyBuffer(stagingBuffer, indexBuffer_, bufferSize);
 
     vkDestroyBuffer(device_, stagingBuffer, nullptr);
     vkFreeMemory(device_, stagingBufferMemory, nullptr);
@@ -635,8 +666,9 @@ void VulkanApp::createCommandBuffers()
         VkDeviceSize offsets[]        = {0};
 
         vkCmdBindVertexBuffers(commandBuffers_[index], 0, 1, vertexBufffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffers_[index], indexBuffer_, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdDraw(commandBuffers_[index], 3, 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffers_[index], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers_[index]);
 
