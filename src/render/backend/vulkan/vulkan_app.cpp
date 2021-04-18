@@ -199,6 +199,8 @@ void VulkanApp::pickPhysicalDevice()
     }
 
     if (physicalDevice_ == VK_NULL_HANDLE) { LOG_FATAL("Failed to find a suitable GPU"); }
+
+    VulkanUtils::dumpPhysicalDeviceProperties(physicalDevice_);
 }
 
 void VulkanApp::createLogicalDevice()
@@ -254,7 +256,7 @@ void VulkanApp::createSwapChain()
     const SwapChainSupportDetails swapChainSupport = VulkanUtils::querySwapChainSupport(physicalDevice_, surface_);
     const VkSurfaceFormatKHR      surfaceFormat    = VulkanUtils::chooseSwapSurfaceFormat(swapChainSupport.formats);
     const VkPresentModeKHR        presentMode      = VulkanUtils::chooseSwapPresentMode(swapChainSupport.presentModes);
-    const VkExtent2D              extent           = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
+    const VkExtent2D              extent = VulkanUtils::chooseSwapExtent(swapChainSupport.capabilities, window_);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -302,6 +304,8 @@ void VulkanApp::createSwapChain()
 
     swapChainImageFormat_ = surfaceFormat.format;
     swapChainExtent_      = extent;
+
+    VulkanUtils::dumpSwapChainDetails(physicalDevice_, surface_);
 }
 
 void VulkanApp::createImageViews()
