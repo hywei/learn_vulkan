@@ -50,6 +50,8 @@ void VulkanApp::initVulkan()
     createVertexBuffers();
     createCommandBuffers();
     createSyncObjects();
+
+    VulkanUtils::dumpQueueFamilyInfo(physicalDevice_);
 }
 
 void VulkanApp::mainLoop()
@@ -151,7 +153,7 @@ void VulkanApp::createInstance()
     vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, vkExtensions.data());
 
     LOG_INFO("Available Extensions: {}", vkExtensionCount);
-    for (const auto& vkExtension : vkExtensions) { LOG_INFO("    {}", vkExtension.extensionName); }
+    for (const auto& vkExtension : vkExtensions) { LOG_INFO("\t{}", vkExtension.extensionName); }
 }
 
 void VulkanApp::setupDebugMessenger()
@@ -580,6 +582,11 @@ void VulkanApp::createVertexBuffers()
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                  vertexBuffer_,
                  vertexBufferMemory_);
+
+    copyBuffer(stagingBuffer, vertexBuffer_, bufferSize);
+
+    vkDestroyBuffer(device_, stagingBuffer, nullptr);
+    vkFreeMemory(device_, stagingBufferMemory, nullptr);
 }
 
 void VulkanApp::createCommandBuffers()
@@ -755,6 +762,16 @@ void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize 
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
     vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo {};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer;
+
+    vkQueueSubmit(graphicsQueue_, 1, &submitInfo, nullptr);
+    vkQueueWaitIdle(graphicsQueue_);
+
+    vkFreeCommandBuffers(device_, commandPool_, 1, &commandBuffer);
 }
 
 uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const

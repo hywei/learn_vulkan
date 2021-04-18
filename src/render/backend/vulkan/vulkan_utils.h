@@ -1,7 +1,10 @@
 #pragma once
 
+#define VK_VALUE_SERIALIZATION_CONFIG_MAIN
+
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
+#include <vk_value_serialization.hpp>
 
 #include <iostream>
 #include <cstdint>
@@ -10,6 +13,7 @@
 #include <algorithm>
 #include <set>
 #include <fstream>
+
 
 #include "foundation/log/log_system.h"
 
@@ -27,6 +31,8 @@ struct SwapChainSupportDetails
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+#define VK_TO_STRING(VKTYPE, VALUE) VulkanUtils::toString<VKTYPE>(#VKTYPE, VALUE)
 
 class VulkanUtils
 {
@@ -267,6 +273,24 @@ public:
         return details;
     }
 
+    static void dumpQueueFamilyInfo(VkPhysicalDevice physicalDevice)
+    {
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+        
+        LOG_INFO("Queue Family Count: {}", queueFamilyCount);
+
+        for (const auto& property : queueFamilies) 
+        {
+            LOG_INFO("\tQueue Count: {:2}, Queue Flags: {}",
+                     property.queueCount,
+                     VK_TO_STRING(VkQueueFlags, property.queueFlags));
+        }
+
+    }
+
     static std::vector<char> readFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -285,6 +309,21 @@ public:
         file.close();
 
         return buffer;
+    }
+
+    template<typename VKTYPE>
+    static std::string toString(std::string_view vkType, VKTYPE vkValue) 
+    {
+        std::string str;
+
+        bool parse = vk_serialize(vkType, static_cast<uint32_t>(vkValue), &str);
+        if (parse == false)
+        {
+            LOG_ERROR("Parse Failed");
+            return "";
+        }
+
+        return str;
     }
 };
 
