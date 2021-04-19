@@ -5,7 +5,8 @@
 
 #include <vector>
 
-class VulkanApp {
+class VulkanApp 
+{
 public:
     virtual ~VulkanApp() = default;
 
@@ -29,11 +30,15 @@ protected:
     void createSwapChain();
     void createImageViews();
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createFrameBuffers();
     void createCommandPool();
     void createVertexBuffer();
     void createIndexBuffer();
+    void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void createCommandBuffers();
     void createSyncObjects();
 
@@ -48,6 +53,7 @@ protected:
                                 VkDeviceMemory&       bufferMemory) const;
     void           copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     uint32_t       findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+    void           updateUniformBuffer(uint32_t imageIndex);
 
     void drawFrame();
 
@@ -69,13 +75,18 @@ private:
     std::vector<VkImageView>     swapChainImageViews_;
     std::vector<VkFramebuffer>   swapChainFrameBuffers_;
     VkRenderPass                 renderPass_ {};
+    VkDescriptorSetLayout        descriptorSetLayout_ {};
     VkPipelineLayout             pipelineLayout_ {};
     VkPipeline                   graphicsPipeline_ {};
     VkCommandPool                commandPool_ {};
+    VkDescriptorPool             descriptorPool_ {};
     VkBuffer                     vertexBuffer_ {};
     VkDeviceMemory               vertexBufferMemory_ {};
     VkBuffer                     indexBuffer_ {};
     VkDeviceMemory               indexBufferMemory_ {};
+    std::vector<VkBuffer>        uniformBuffers_;
+    std::vector<VkDeviceMemory>  uniformBuffersMemory_;
+    std::vector<VkDescriptorSet> descriptorSets_;
     std::vector<VkCommandBuffer> commandBuffers_;
     std::vector<VkSemaphore>     imageAvailableSemaphores_ {};
     std::vector<VkSemaphore>     renderFinishedSemaphores_ {};
@@ -92,4 +103,11 @@ struct Vertex
 
     static VkVertexInputBindingDescription                  getBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+};
+
+struct UniformBufferObject
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
 };
