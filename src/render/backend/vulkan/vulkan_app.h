@@ -1,4 +1,7 @@
 #pragma once
+
+#include "render/backend/vulkan/vulkan_config.h"
+
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>

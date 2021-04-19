@@ -1,5 +1,12 @@
 #pragma once
 
+#define GLFW_INCLUDE_VULKAN
+#define GLM_FORCE_RADIANS
+
+#define VK_VALUE_SERIALIZATION_CONFIG_MAIN
+
+#include <vulkan/vulkan.h>
+
 #include <vector>
 
 namespace VulkanConfig

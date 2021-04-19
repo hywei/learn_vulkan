@@ -1,6 +1,7 @@
 #pragma once
 
-#define VK_VALUE_SERIALIZATION_CONFIG_MAIN
+#include "render/backend/vulkan/vulkan_config.h"
+#include "foundation/log/log_system.h"
 
 #include <GLFW/glfw3.h>
 #include <vk_value_serialization.hpp>
@@ -13,8 +14,6 @@
 #include <optional>
 #include <set>
 #include <vector>
-
-#include "foundation/log/log_system.h"
 
 struct QueueFamilyIndices
 {

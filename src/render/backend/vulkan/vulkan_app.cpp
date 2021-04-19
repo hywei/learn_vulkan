@@ -1,9 +1,6 @@
-#define GLFW_INCLUDE_VULKAN
-#define GLM_FORCE_RADIANS
 
-#include "vulkan_app.h"
-#include "vulkan_config.h"
-#include "vulkan_utils.h"
+#include "render/backend/vulkan/vulkan_app.h"
+#include "render/backend/vulkan/vulkan_utils.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
