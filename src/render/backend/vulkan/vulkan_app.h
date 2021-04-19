@@ -8,8 +8,7 @@
 
 #include <vector>
 
-class VulkanApp 
-{
+class VulkanApp {
 public:
     virtual ~VulkanApp() = default;
 
@@ -37,6 +36,7 @@ protected:
     void createGraphicsPipeline();
     void createFrameBuffers();
     void createCommandPool();
+    void createTextureImage();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
@@ -48,15 +48,27 @@ protected:
     void recreateSwapChain();
 
     // helper functions
-    VkShaderModule createShaderModule(const std::vector<char>& code) const;
-    void           createBuffer(VkDeviceSize          size,
-                                VkBufferUsageFlags    usage,
+    VkShaderModule  createShaderModule(const std::vector<char>& code) const;
+    void            createBuffer(VkDeviceSize          size,
+                                 VkBufferUsageFlags    usage,
+                                 VkMemoryPropertyFlags properties,
+                                 VkBuffer&             buffer,
+                                 VkDeviceMemory&       bufferMemory) const;
+    void            copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+    void            copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+    void            createImage(uint32_t              width,
+                                uint32_t              height,
+                                VkFormat              format,
+                                VkImageTiling         tiling,
+                                VkImageUsageFlags     usage,
                                 VkMemoryPropertyFlags properties,
-                                VkBuffer&             buffer,
-                                VkDeviceMemory&       bufferMemory) const;
-    void           copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    uint32_t       findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
-    void           updateUniformBuffer(uint32_t imageIndex);
+                                VkImage&              image,
+                                VkDeviceMemory&       imageMemory) const;
+    uint32_t        findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+    void            updateUniformBuffer(uint32_t imageIndex);
+    VkCommandBuffer beginSingleTimeCommands() const;
+    void            endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
     void drawFrame();
 
@@ -83,6 +95,8 @@ private:
     VkPipeline                   graphicsPipeline_ {};
     VkCommandPool                commandPool_ {};
     VkDescriptorPool             descriptorPool_ {};
+    VkImage                      textureImage_ {};
+    VkDeviceMemory               textureImageMemory_ {};
     VkBuffer                     vertexBuffer_ {};
     VkDeviceMemory               vertexBufferMemory_ {};
     VkBuffer                     indexBuffer_ {};

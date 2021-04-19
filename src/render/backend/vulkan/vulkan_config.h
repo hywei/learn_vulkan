@@ -5,6 +5,8 @@
 
 #define VK_VALUE_SERIALIZATION_CONFIG_MAIN
 
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
