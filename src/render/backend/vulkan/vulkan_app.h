@@ -37,6 +37,8 @@ protected:
     void createFrameBuffers();
     void createCommandPool();
     void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
@@ -64,6 +66,7 @@ protected:
                                 VkMemoryPropertyFlags properties,
                                 VkImage&              image,
                                 VkDeviceMemory&       imageMemory) const;
+    VkImageView     createImageView(VkImage image, VkFormat format) const;
     uint32_t        findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
     void            updateUniformBuffer(uint32_t imageIndex);
     VkCommandBuffer beginSingleTimeCommands() const;
@@ -97,6 +100,8 @@ private:
     VkDescriptorPool             descriptorPool_ {};
     VkImage                      textureImage_ {};
     VkDeviceMemory               textureImageMemory_ {};
+    VkImageView                  textureImageView_ {};
+    VkSampler                    textureSampler_ {};
     VkBuffer                     vertexBuffer_ {};
     VkDeviceMemory               vertexBufferMemory_ {};
     VkBuffer                     indexBuffer_ {};

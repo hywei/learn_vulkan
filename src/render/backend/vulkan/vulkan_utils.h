@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render/backend/vulkan/vulkan_config.h"
 #include "foundation/log/log_system.h"
+#include "render/backend/vulkan/vulkan_config.h"
 
 #include <GLFW/glfw3.h>
 #include <vk_value_serialization.hpp>
@@ -20,7 +20,10 @@ struct QueueFamilyIndices
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    bool isComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+    bool isComplete() const
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
 };
 
 struct SwapChainSupportDetails
@@ -54,7 +57,8 @@ public:
                 }
             }
 
-            if (!layerFound) return false;
+            if (!layerFound)
+                return false;
         }
 
         return true;
@@ -67,7 +71,10 @@ public:
 
         std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-        if (VulkanConfig::gEnableValidationLayers) { extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); }
+        if (VulkanConfig::gEnableValidationLayers)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
 
         return extensions;
     }
@@ -88,7 +95,10 @@ public:
     {
         const auto func =
             (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr) { return func(instance, pCreateInfo, pAllocator, pDebugMessenger); }
+        if (func != nullptr)
+        {
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        }
         else
         {
             return VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -101,7 +111,10 @@ public:
     {
         const auto func =
             (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMEssengerEXT");
-        if (func != nullptr) { func(instance, debugMessenger, pAllocator); }
+        if (func != nullptr)
+        {
+            func(instance, debugMessenger, pAllocator);
+        }
     }
 
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
@@ -126,7 +139,10 @@ public:
         vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
         std::set<std::string> requiredExtensions(gDeviceExtensions.begin(), gDeviceExtensions.end());
-        for (const auto& extension : availableExtensions) { requiredExtensions.erase(extension.extensionName); }
+        for (const auto& extension : availableExtensions)
+        {
+            requiredExtensions.erase(extension.extensionName);
+        }
 
         return requiredExtensions.empty();
     }
@@ -144,13 +160,20 @@ public:
         int index = 0;
         for (const auto& queueFamily : queueFamilies)
         {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) { indices.graphicsFamily = index; }
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.graphicsFamily = index;
+            }
 
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
-            if (presentSupport) { indices.presentFamily = index; }
+            if (presentSupport)
+            {
+                indices.presentFamily = index;
+            }
 
-            if (indices.isComplete()) break;
+            if (indices.isComplete())
+                break;
 
             index++;
         }
@@ -170,7 +193,11 @@ public:
 
         const QueueFamilyIndices indices = VulkanUtils::findQueueFamilies(device, surface);
 
-        return indices.isComplete() && isExtensionSupported && isSwapChainAdequate;
+        VkPhysicalDeviceFeatures supportedFeatures {};
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+        return indices.isComplete() && isExtensionSupported && isSwapChainAdequate &&
+               supportedFeatures.samplerAnisotropy;
     }
 
     static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -191,7 +218,10 @@ public:
     {
         for (const auto& availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) { return availablePresentMode; }
+            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            {
+                return availablePresentMode;
+            }
         }
 
         return VK_PRESENT_MODE_FIFO_KHR;
@@ -199,7 +229,10 @@ public:
 
     static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)
     {
-        if (capabilities.currentExtent.width != UINT32_MAX) { return capabilities.currentExtent; }
+        if (capabilities.currentExtent.width != UINT32_MAX)
+        {
+            return capabilities.currentExtent;
+        }
         else
         {
             int width, height;
@@ -244,7 +277,10 @@ public:
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
-        if (!file.is_open()) { LOG_FATAL("Failed to open file!"); }
+        if (!file.is_open())
+        {
+            LOG_FATAL("Failed to open file!");
+        }
 
         const size_t      fileSize = static_cast<size_t>(file.tellg());
         std::vector<char> buffer(fileSize);
@@ -297,7 +333,10 @@ public:
         vkEnumerateInstanceExtensionProperties(nullptr, &vkExtensionCount, vkExtensions.data());
 
         LOG_INFO("Available Extensions: {}", vkExtensionCount);
-        for (const auto& vkExtension : vkExtensions) { LOG_INFO("  {}", vkExtension.extensionName); }
+        for (const auto& vkExtension : vkExtensions)
+        {
+            LOG_INFO("  {}", vkExtension.extensionName);
+        }
     }
 
     static void dumpPhysicalDeviceProperties(VkPhysicalDevice physicalDevice)
@@ -370,11 +409,11 @@ public:
         LOG_INFO("    {:32}{}",
                  "Supported Composite Alpha:",
                  VK_TO_STRING(VkCompositeAlphaFlagsKHR, capabilities.supportedTransforms));
-        LOG_INFO("    {:32}{}",
-                 "Supported Usage Flags:", VK_TO_STRING(VkImageUsageFlags, capabilities.supportedUsageFlags));
+        LOG_INFO(
+            "    {:32}{}", "Supported Usage Flags:", VK_TO_STRING(VkImageUsageFlags, capabilities.supportedUsageFlags));
 
         LOG_INFO("  SwapChain Formats:")
-        for (const VkSurfaceFormatKHR& format : details.formats) 
+        for (const VkSurfaceFormatKHR& format : details.formats)
         {
             LOG_INFO("    {:16}{:32} {:16}{}",
                      "Format:",
@@ -384,11 +423,9 @@ public:
         }
 
         LOG_INFO("  SwapChain PresentModes:");
-        for (const VkPresentModeKHR presentMode : details.presentModes) 
+        for (const VkPresentModeKHR presentMode : details.presentModes)
         {
-            LOG_INFO("    {:16}{}",
-                     "Present Mode:", VK_TO_STRING(VkPresentModeKHR, presentMode));
-
+            LOG_INFO("    {:16}{}", "Present Mode:", VK_TO_STRING(VkPresentModeKHR, presentMode));
         }
     }
 };

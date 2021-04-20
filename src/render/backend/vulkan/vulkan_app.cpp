@@ -59,6 +59,8 @@ void VulkanApp::initVulkan()
     createFrameBuffers();
     createCommandPool();
     createTextureImage();
+    createTextureImageView();
+    createTextureSampler();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -120,6 +122,9 @@ void VulkanApp::cleanup()
         vkDestroySemaphore(device_, imageAvailableSemaphores_[index], nullptr);
         vkDestroyFence(device_, inFlightFences_[index], nullptr);
     }
+
+    vkDestroySampler(device_, textureSampler_, nullptr);
+    vkDestroyImageView(device_, textureImageView_, nullptr);
 
     vkDestroyImage(device_, textureImage_, nullptr);
     vkFreeMemory(device_, textureImageMemory_, nullptr);
@@ -263,6 +268,7 @@ void VulkanApp::createLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures deviceFeatures {};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo deviceCreateInfo {};
     deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -354,25 +360,7 @@ void VulkanApp::createImageViews()
 
     for (size_t index = 0; index < swapChainImageViews_.size(); index++)
     {
-        VkImageViewCreateInfo createInfo {};
-        createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image                           = swapChainImages_[index];
-        createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format                          = swapChainImageFormat_;
-        createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel   = 0;
-        createInfo.subresourceRange.levelCount     = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount     = 1;
-
-        if (vkCreateImageView(device_, &createInfo, nullptr, &swapChainImageViews_[index]) != VK_SUCCESS)
-        {
-            LOG_FATAL("Failed to create image views");
-        }
+        swapChainImageViews_[index] = createImageView(swapChainImages_[index], swapChainImageFormat_);
     }
 }
 
@@ -680,6 +668,40 @@ void VulkanApp::createTextureImage()
 
     vkDestroyBuffer(device_, stagingBuffer, nullptr);
     vkFreeMemory(device_, stagingBufferMemory, nullptr);
+}
+
+void VulkanApp::createTextureImageView()
+{
+    textureImageView_ = createImageView(textureImage_, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
+void VulkanApp::createTextureSampler()
+{
+    VkPhysicalDeviceProperties properties {};
+    vkGetPhysicalDeviceProperties(physicalDevice_, &properties);
+
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias              = 0.0F;
+    samplerInfo.minLod                  = 0.0F;
+    samplerInfo.maxLod                  = 0.0F;
+
+    if (vkCreateSampler(device_, &samplerInfo, nullptr, &textureSampler_) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create texture sampler");
+    }
 }
 
 void VulkanApp::createVertexBuffer()
@@ -1063,6 +1085,32 @@ void VulkanApp::createImage(uint32_t              width,
     }
 
     vkBindImageMemory(device_, image, imageMemory, 0);
+}
+
+VkImageView VulkanApp::createImageView(VkImage image, VkFormat format) const
+{
+    VkImageViewCreateInfo viewInfo {};
+    viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image                           = image;
+    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format                          = format;
+    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.subresourceRange.baseMipLevel   = 0;
+    viewInfo.subresourceRange.levelCount     = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount     = 1;
+
+    VkImageView imageView {};
+    if (vkCreateImageView(device_, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+    {
+        LOG_FATAL("Failed to create texture image view");
+    }
+
+    return imageView;
 }
 
 uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
