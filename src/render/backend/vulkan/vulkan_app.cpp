@@ -12,16 +12,16 @@
 #include <set>
 #include <vector>
 
-const std::vector<Vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                                      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-                                      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}},
+                                      {{0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}},
+                                      {{0.5F, 0.5F}, {0.0F, 0.0F, 1.0F}},
+                                      {{-0.5F, 0.5F}, {1.0F, 1.0F, 1.0F}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
 {
-    auto app                 = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(windows));
+    auto* app                = static_cast<VulkanApp*>(glfwGetWindowUserPointer(windows));
     app->frameBufferResized_ = true;
 }
 
@@ -73,7 +73,7 @@ void VulkanApp::initVulkan()
 
 void VulkanApp::mainLoop()
 {
-    while (!glfwWindowShouldClose(window_))
+    while (glfwWindowShouldClose(window_) == 0)
     {
         glfwPollEvents();
         drawFrame();
@@ -84,7 +84,7 @@ void VulkanApp::mainLoop()
 
 void VulkanApp::cleanupSwapChain()
 {
-    for (auto framebuffer : swapChainFrameBuffers_)
+    for (auto* framebuffer : swapChainFrameBuffers_)
     {
         vkDestroyFramebuffer(device_, framebuffer, nullptr);
     }
@@ -94,7 +94,7 @@ void VulkanApp::cleanupSwapChain()
     vkDestroyPipelineLayout(device_, pipelineLayout_, nullptr);
     vkDestroyRenderPass(device_, renderPass_, nullptr);
 
-    for (auto imageView : swapChainImageViews_)
+    for (auto* imageView : swapChainImageViews_)
     {
         vkDestroyImageView(device_, imageView, nullptr);
     }
@@ -179,7 +179,7 @@ void VulkanApp::createInstance()
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
         VulkanUtils::populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
+        createInfo.pNext = static_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
     }
     else
     {
@@ -247,7 +247,7 @@ void VulkanApp::createLogicalDevice()
 {
     QueueFamilyIndices indices = VulkanUtils::findQueueFamilies(physicalDevice_, surface_);
 
-    const float queuePriority = 1.f;
+    const float queuePriority = 1.F;
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -479,12 +479,12 @@ void VulkanApp::createGraphicsPipeline()
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     VkViewport viewport {};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
+    viewport.x        = 0.0F;
+    viewport.y        = 0.0F;
     viewport.width    = static_cast<float>(swapChainExtent_.width);
     viewport.height   = static_cast<float>(swapChainExtent_.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
@@ -502,19 +502,19 @@ void VulkanApp::createGraphicsPipeline()
     rasterizer.depthClampEnable        = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode             = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth               = 1.0f;
+    rasterizer.lineWidth               = 1.0F;
     rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable         = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f;
-    rasterizer.depthBiasClamp          = 0.0f;
-    rasterizer.depthBiasSlopeFactor    = 0.0f;
+    rasterizer.depthBiasConstantFactor = 0.0F;
+    rasterizer.depthBiasClamp          = 0.0F;
+    rasterizer.depthBiasSlopeFactor    = 0.0F;
 
     VkPipelineMultisampleStateCreateInfo multisampling {};
     multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable   = VK_FALSE;
     multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading      = 1.0f;
+    multisampling.minSampleShading      = 1.0F;
     multisampling.pSampleMask           = nullptr;
     multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable      = VK_FALSE;
@@ -536,10 +536,10 @@ void VulkanApp::createGraphicsPipeline()
     colorBlending.logicOp           = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount   = 1;
     colorBlending.pAttachments      = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    colorBlending.blendConstants[0] = 0.0F;
+    colorBlending.blendConstants[1] = 0.0F;
+    colorBlending.blendConstants[2] = 0.0F;
+    colorBlending.blendConstants[3] = 0.0F;
 
     VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_LINE_WIDTH};
 
@@ -628,7 +628,10 @@ void VulkanApp::createCommandPool()
 
 void VulkanApp::createTextureImage()
 {
-    int      textureWidth, textureHeight, textureChannels;
+    int textureWidth {0};
+    int textureHeight {0};
+    int textureChannels {0};
+
     stbi_uc* pixels = stbi_load("E:/projects/learn_vulkan/data/textures/texture.jpg",
                                 &textureWidth,
                                 &textureHeight,
@@ -641,8 +644,8 @@ void VulkanApp::createTextureImage()
 
     VkDeviceSize imageSize = textureWidth * textureHeight * 4;
 
-    VkBuffer       stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VkBuffer       stagingBuffer {nullptr};
+    VkDeviceMemory stagingBufferMemory {nullptr};
 
     createBuffer(imageSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -650,7 +653,7 @@ void VulkanApp::createTextureImage()
                  stagingBuffer,
                  stagingBufferMemory);
 
-    void* data;
+    void* data {nullptr};
     vkMapMemory(device_, stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, static_cast<void*>(pixels), static_cast<size_t>(imageSize));
     vkUnmapMemory(device_, stagingBufferMemory);
@@ -683,15 +686,15 @@ void VulkanApp::createVertexBuffer()
 {
     const VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
-    VkBuffer       stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VkBuffer       stagingBuffer {nullptr};
+    VkDeviceMemory stagingBufferMemory {nullptr};
 
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  stagingBuffer,
                  stagingBufferMemory);
-    void* data;
+    void* data {nullptr};
     vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(device_, stagingBufferMemory);
@@ -712,8 +715,8 @@ void VulkanApp::createIndexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
-    VkBuffer       stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VkBuffer       stagingBuffer {nullptr};
+    VkDeviceMemory stagingBufferMemory {nullptr};
 
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -721,7 +724,7 @@ void VulkanApp::createIndexBuffer()
                  stagingBuffer,
                  stagingBufferMemory);
 
-    void* data;
+    void* data {nullptr};
     vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(device_, stagingBufferMemory);
@@ -839,7 +842,7 @@ void VulkanApp::createCommandBuffers()
             LOG_FATAL("Failed to begin recording command buffer!");
         }
 
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        VkClearValue clearColor = {0.0F, 0.0F, 0.0F, 1.0F};
 
         VkRenderPassBeginInfo renderPassInfo {};
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -907,7 +910,9 @@ void VulkanApp::createSyncObjects()
 void VulkanApp::recreateSwapChain()
 {
     // handle minimization
-    int width = 0, height = 0;
+    int width  = 0;
+    int height = 0;
+
     glfwGetFramebufferSize(window_, &width, &height);
     while (width == 0 || height == 0)
     {
@@ -939,7 +944,7 @@ VkShaderModule VulkanApp::createShaderModule(const std::vector<char>& code) cons
     createInfo.codeSize = code.size();
     createInfo.pCode    = reinterpret_cast<const uint32_t*>(code.data());
 
-    VkShaderModule shaderModule;
+    VkShaderModule shaderModule {nullptr};
     if (vkCreateShaderModule(device_, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
     {
         LOG_FATAL("Failed to create shader module");
@@ -1067,7 +1072,7 @@ uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 
     for (uint32_t index = 0; index < memoryProperties.memoryTypeCount; index++)
     {
-        if ((typeFilter & (1 << index)) &&
+        if (((typeFilter & (1 << index)) != 0) &&
             (memoryProperties.memoryTypes[index].propertyFlags & properties) == properties)
         {
             return index;
@@ -1086,13 +1091,13 @@ void VulkanApp::updateUniformBuffer(uint32_t imageIndex)
     const float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo {};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view  = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0F), time * glm::radians(90.0F), glm::vec3(0.0F, 0.0F, 1.0F));
+    ubo.view  = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3(0.0F, 0.0F, 1.0F));
     ubo.proj  = glm::perspective(
-        glm::radians(45.0f), swapChainExtent_.width / static_cast<float>(swapChainExtent_.height), 0.1f, 10.0f);
+        glm::radians(45.0F), swapChainExtent_.width / static_cast<float>(swapChainExtent_.height), 0.1F, 10.0F);
     ubo.proj[1][1] *= -1;
 
-    void* data;
+    void* data {nullptr};
     vkMapMemory(device_, uniformBuffersMemory_[imageIndex], 0, sizeof(ubo), 0, &data);
     memcpy(data, &ubo, sizeof(ubo));
     vkUnmapMemory(device_, uniformBuffersMemory_[imageIndex]);
@@ -1106,7 +1111,7 @@ VkCommandBuffer VulkanApp::beginSingleTimeCommands() const
     allocInfo.commandPool        = commandPool_;
     allocInfo.commandBufferCount = 1;
 
-    VkCommandBuffer commandBuffer;
+    VkCommandBuffer commandBuffer {nullptr};
     vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo {};
@@ -1186,7 +1191,7 @@ void VulkanApp::drawFrame()
 {
     vkWaitForFences(device_, 1, &inFlightFences_[currentFrameIndex_], VK_TRUE, UINT16_MAX);
 
-    uint32_t imageIndex;
+    uint32_t imageIndex {0};
     vkAcquireNextImageKHR(
         device_, swapChain_, UINT64_MAX, imageAvailableSemaphores_[currentFrameIndex_], VK_NULL_HANDLE, &imageIndex);
 
