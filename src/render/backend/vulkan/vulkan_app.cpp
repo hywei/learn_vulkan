@@ -12,12 +12,19 @@
 #include <set>
 #include <vector>
 
-const std::vector<Vertex> vertices = {{{-0.5F, -0.5F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
-                                      {{0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
-                                      {{0.5F, 0.5F}, {0.0F, 0.0F, 1.0F}, {0.0F, 1.0F}},
-                                      {{-0.5F, 0.5F}, {1.0F, 1.0F, 1.0F}, {1.0F, 1.0F}}};
+const std::vector<Vertex> vertices = {
+    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
+    {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
+    {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
+    {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
 
-const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+    {{-0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 0.0F}},
+    {{0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
+    {{0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 1.0F}},
+    {{-0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 1.0F}},
+};
+
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
 {
@@ -360,7 +367,8 @@ void VulkanApp::createImageViews()
 
     for (size_t index = 0; index < swapChainImageViews_.size(); index++)
     {
-        swapChainImageViews_[index] = createImageView(swapChainImages_[index], swapChainImageFormat_);
+        swapChainImageViews_[index] =
+            createImageView(swapChainImages_[index], swapChainImageFormat_, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
@@ -622,6 +630,24 @@ void VulkanApp::createCommandPool()
     }
 }
 
+void VulkanApp::createDepthResources()
+{
+    const VkFormat depthFormat = findDepthFormat();
+
+    createImage(swapChainExtent_.width,
+                swapChainExtent_.height,
+                depthFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                depthImage_,
+                depthImageMemory_);
+    depthImageView_ = createImageView(depthImage_, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    transitionImageLayout(
+        depthImage_, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
 void VulkanApp::createTextureImage()
 {
     int textureWidth {0};
@@ -680,7 +706,7 @@ void VulkanApp::createTextureImage()
 
 void VulkanApp::createTextureImageView()
 {
-    textureImageView_ = createImageView(textureImage_, VK_FORMAT_R8G8B8A8_SRGB);
+    textureImageView_ = createImageView(textureImage_, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void VulkanApp::createTextureSampler()
@@ -1114,14 +1140,14 @@ void VulkanApp::createImage(uint32_t              width,
     vkBindImageMemory(device_, image, imageMemory, 0);
 }
 
-VkImageView VulkanApp::createImageView(VkImage image, VkFormat format) const
+VkImageView VulkanApp::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const
 {
     VkImageViewCreateInfo viewInfo {};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
     viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format                          = format;
-    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.aspectMask     = aspectFlags;
     viewInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -1157,6 +1183,15 @@ uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
     LOG_FATAL("Failed to find suitable memory type!");
 
     return 0;
+}
+
+VkFormat VulkanApp::findDepthFormat() const
+{
+    return VulkanUtils::findSupportedFormat(
+        physicalDevice_,
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 void VulkanApp::updateUniformBuffer(uint32_t imageIndex)
@@ -1220,6 +1255,18 @@ void VulkanApp::transitionImageLayout(VkImage       image,
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
+    VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+    {
+        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        if (VulkanUtils::hasStencilComponent(format))
+        {
+            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }
+
     VkImageMemoryBarrier barrier {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout                       = oldLayout;
@@ -1227,7 +1274,7 @@ void VulkanApp::transitionImageLayout(VkImage       image,
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.image                           = image;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = aspectMask;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -1252,6 +1299,7 @@ void VulkanApp::transitionImageLayout(VkImage       image,
         sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     }
+    // else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout)
     else
     {
         LOG_FATAL("Unsupported layout transition!");
@@ -1342,7 +1390,7 @@ std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescription
 
     attributeDescriptions[0].binding  = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[0].offset   = offsetof(Vertex, pos);
 
     attributeDescriptions[1].binding  = 0;

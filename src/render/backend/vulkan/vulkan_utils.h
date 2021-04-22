@@ -273,6 +273,36 @@ public:
         return details;
     }
 
+    static VkFormat findSupportedFormat(VkPhysicalDevice             physicalDevice,
+                                        const std::vector<VkFormat>& candidates,
+                                        VkImageTiling                tiling,
+                                        VkFormatFeatureFlags         features)
+    {
+        for (VkFormat format : candidates)
+        {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+            {
+                return format;
+            }
+
+            if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            {
+                return format;
+            }
+        }
+
+        LOG_FATAL("Failed to find supported format!");
+        return VK_FORMAT_UNDEFINED;
+    }
+
+    static bool hasStencilComponent(VkFormat format)
+    {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
     static std::vector<char> readFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -299,7 +329,7 @@ public:
         std::string str;
 
         bool parse = vk_serialize(vkType, static_cast<uint32_t>(vkValue), &str);
-        if (parse == false)
+        if (!parse)
         {
             LOG_ERROR("Parse Failed");
             return "";

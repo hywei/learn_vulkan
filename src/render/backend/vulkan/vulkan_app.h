@@ -36,6 +36,7 @@ protected:
     void createGraphicsPipeline();
     void createFrameBuffers();
     void createCommandPool();
+    void createDepthResources();
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
@@ -66,8 +67,9 @@ protected:
                                 VkMemoryPropertyFlags properties,
                                 VkImage&              image,
                                 VkDeviceMemory&       imageMemory) const;
-    VkImageView     createImageView(VkImage image, VkFormat format) const;
+    VkImageView     createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
     uint32_t        findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+    VkFormat        findDepthFormat() const;
     void            updateUniformBuffer(uint32_t imageIndex);
     VkCommandBuffer beginSingleTimeCommands() const;
     void            endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
@@ -98,6 +100,9 @@ private:
     VkPipeline                   graphicsPipeline_ {};
     VkCommandPool                commandPool_ {};
     VkDescriptorPool             descriptorPool_ {};
+    VkImage                      depthImage_ {};
+    VkDeviceMemory               depthImageMemory_ {};
+    VkImageView                  depthImageView_ {};
     VkImage                      textureImage_ {};
     VkDeviceMemory               textureImageMemory_ {};
     VkImageView                  textureImageView_ {};
@@ -120,7 +125,7 @@ private:
 
 struct Vertex
 {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
