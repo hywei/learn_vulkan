@@ -26,6 +26,9 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
+const std::string MODEL_PATH   = "E:/projects/learn_vulkan/data/models/viking_room.obj";
+const std::string TEXTURE_PATH = "E:/projects/learn_vulkan/data/textures/viking_room.png";
+
 void VulkanApp::frameBufferResizeCallback(GLFWwindow* windows, int width, int height)
 {
     auto* app                = static_cast<VulkanApp*>(glfwGetWindowUserPointer(windows));
