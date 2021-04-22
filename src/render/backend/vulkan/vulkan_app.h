@@ -2,11 +2,29 @@
 
 #include "render/backend/vulkan/vulkan_config.h"
 
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
+#include <GLFW/glfw3.h>
+
 #include <vector>
+
+struct Vertex
+{
+    glm::vec3 pos;
+    glm::vec3 color;
+    glm::vec2 texCoord;
+
+    static VkVertexInputBindingDescription                  getBindingDescription();
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+};
+
+struct UniformBufferObject
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
 
 class VulkanApp {
 public:
@@ -75,6 +93,7 @@ protected:
     void            endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
+    void loadModel();
     void drawFrame();
 
     static void frameBufferResizeCallback(GLFWwindow* windows, int width, int height);
@@ -119,23 +138,8 @@ private:
     std::vector<VkSemaphore>     renderFinishedSemaphores_ {};
     std::vector<VkFence>         inFlightFences_ {};
     std::vector<VkFence>         imagesInFlight_ {};
+    std::vector<Vertex>          vertices_ {};
+    std::vector<uint32_t>        indices_ {};
     size_t                       currentFrameIndex_ {0};
     bool                         frameBufferResized_ {false};
-};
-
-struct Vertex
-{
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec2 texCoord;
-
-    static VkVertexInputBindingDescription                  getBindingDescription();
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
-};
-
-struct UniformBufferObject
-{
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
 };

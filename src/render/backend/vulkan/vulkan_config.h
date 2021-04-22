@@ -8,6 +8,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 
+#define TINYOBJLOADER_IMPLEMENTATION
+
 #include <vulkan/vulkan.h>
 
 #include <vector>

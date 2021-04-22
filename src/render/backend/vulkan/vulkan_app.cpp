@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb_image.h>
+#include <tiny_obj_loader.h>
 
 #include <chrono>
 #include <cstdint>
@@ -12,19 +13,19 @@
 #include <set>
 #include <vector>
 
-const std::vector<Vertex> vertices = {
-    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
-    {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
-    {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
-    {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
-
-    {{-0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 0.0F}},
-    {{0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
-    {{0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 1.0F}},
-    {{-0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 1.0F}},
-};
-
-const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
+// const std::vector<Vertex> vertices = {
+//    {{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
+//    {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
+//    {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
+//    {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
+//
+//    {{-0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 0.0F}},
+//    {{0.5F, -0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 0.0F}},
+//    {{0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {0.0F, 1.0F}},
+//    {{-0.5F, 0.5F, -0.5F}, {0.0F, 1.0F, 0.0F}, {1.0F, 1.0F}},
+//};
+//
+// const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 const std::string MODEL_PATH   = "E:/projects/learn_vulkan/data/models/viking_room.obj";
 const std::string TEXTURE_PATH = "E:/projects/learn_vulkan/data/textures/viking_room.png";
@@ -56,6 +57,8 @@ void VulkanApp::initWindow()
 
 void VulkanApp::initVulkan()
 {
+    loadModel();
+
     createInstance();
     setupDebugMessenger();
     createSurface();
@@ -693,11 +696,7 @@ void VulkanApp::createTextureImage()
     int textureHeight {0};
     int textureChannels {0};
 
-    stbi_uc* pixels = stbi_load("E:/projects/learn_vulkan/data/textures/texture.jpg",
-                                &textureWidth,
-                                &textureHeight,
-                                &textureChannels,
-                                STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     if (pixels == nullptr)
     {
         LOG_FATAL("Failded to load texture image!");
@@ -779,7 +778,7 @@ void VulkanApp::createTextureSampler()
 
 void VulkanApp::createVertexBuffer()
 {
-    const VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    const VkDeviceSize bufferSize = sizeof(vertices_[0]) * vertices_.size();
 
     VkBuffer       stagingBuffer {nullptr};
     VkDeviceMemory stagingBufferMemory {nullptr};
@@ -791,7 +790,7 @@ void VulkanApp::createVertexBuffer()
                  stagingBufferMemory);
     void* data {nullptr};
     vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, vertices_.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(device_, stagingBufferMemory);
 
     createBuffer(bufferSize,
@@ -808,7 +807,7 @@ void VulkanApp::createVertexBuffer()
 
 void VulkanApp::createIndexBuffer()
 {
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    VkDeviceSize bufferSize = sizeof(indices_[0]) * indices_.size();
 
     VkBuffer       stagingBuffer {nullptr};
     VkDeviceMemory stagingBufferMemory {nullptr};
@@ -821,7 +820,7 @@ void VulkanApp::createIndexBuffer()
 
     void* data {nullptr};
     vkMapMemory(device_, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, indices_.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(device_, stagingBufferMemory);
 
     createBuffer(bufferSize,
@@ -977,7 +976,7 @@ void VulkanApp::createCommandBuffers()
         VkDeviceSize offsets[]        = {0};
 
         vkCmdBindVertexBuffers(commandBuffers_[index], 0, 1, vertexBufffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers_[index], indexBuffer_, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffers_[index], indexBuffer_, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffers_[index],
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout_,
@@ -987,7 +986,7 @@ void VulkanApp::createCommandBuffers()
                                 0,
                                 nullptr);
 
-        vkCmdDrawIndexed(commandBuffers_[index], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffers_[index], static_cast<uint32_t>(indices_.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers_[index]);
 
@@ -1358,6 +1357,39 @@ void VulkanApp::transitionImageLayout(VkImage       image,
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
     endSingleTimeCommands(commandBuffer);
+}
+
+void VulkanApp::loadModel()
+{
+    tinyobj::attrib_t                attrib;
+    std::vector<tinyobj::shape_t>    shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string                      warn;
+    std::string                      err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+    {
+        LOG_FATAL("{} {}", warn, err);
+    }
+
+    for (const auto& shape : shapes)
+    {
+        for (const auto& index : shape.mesh.indices)
+        {
+            Vertex vertex {};
+            vertex.pos = {attrib.vertices[3 * index.vertex_index + 0],
+                          attrib.vertices[3 * index.vertex_index + 1],
+                          attrib.vertices[3 * index.vertex_index + 2]};
+
+            vertex.texCoord = {attrib.texcoords[2 * index.texcoord_index + 0],
+                               1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+
+            vertex.color = {1.0F, 1.0F, 1.0F};
+
+            vertices_.push_back(vertex);
+            indices_.push_back(static_cast<uint32_t>(indices_.size()));
+        }
+    }
 }
 
 void VulkanApp::drawFrame()

@@ -3,9 +3,10 @@
 #include "foundation/log/log_system.h"
 #include "render/backend/vulkan/vulkan_config.h"
 
-#include <GLFW/glfw3.h>
 #include <vk_value_serialization.hpp>
 #include <vulkan/vulkan.h>
+
+#include <GLFW/glfw3.h>
 
 #include <algorithm>
 #include <cstdint>
