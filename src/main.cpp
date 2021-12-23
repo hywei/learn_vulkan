@@ -1,7 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 
-#include <iostream>
 #include "render/backend/vulkan/vulkan_app.h"
+#include <iostream>
 
 #include "foundation/log/log_system.h"
 
@@ -13,7 +13,8 @@ int main(int argc, char** argv)
     try
     {
         app.run();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         LOG_ERROR(e.what());
         return EXIT_FAILURE;

@@ -69,29 +69,36 @@ protected:
     void recreateSwapChain();
 
     // helper functions
-    VkShaderModule  createShaderModule(const std::vector<char>& code) const;
-    void            createBuffer(VkDeviceSize          size,
-                                 VkBufferUsageFlags    usage,
-                                 VkMemoryPropertyFlags properties,
-                                 VkBuffer&             buffer,
-                                 VkDeviceMemory&       bufferMemory) const;
-    void            copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
-    void            copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
-    void            createImage(uint32_t              width,
-                                uint32_t              height,
-                                VkFormat              format,
-                                VkImageTiling         tiling,
-                                VkImageUsageFlags     usage,
-                                VkMemoryPropertyFlags properties,
-                                VkImage&              image,
-                                VkDeviceMemory&       imageMemory) const;
-    VkImageView     createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
-    uint32_t        findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
-    VkFormat        findDepthFormat() const;
-    void            updateUniformBuffer(uint32_t imageIndex);
-    VkCommandBuffer beginSingleTimeCommands() const;
-    void            endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+    [[nodiscard]] VkShaderModule createShaderModule(const std::vector<char>& code) const;
+    void                         createBuffer(VkDeviceSize          size,
+                                              VkBufferUsageFlags    usage,
+                                              VkMemoryPropertyFlags properties,
+                                              VkBuffer&             buffer,
+                                              VkDeviceMemory&       bufferMemory) const;
+    void                         copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+    void createImage(uint32_t              width,
+                     uint32_t              height,
+                     uint32_t              mipLevels,
+                     VkFormat              format,
+                     VkImageTiling         tiling,
+                     VkImageUsageFlags     usage,
+                     VkMemoryPropertyFlags properties,
+                     VkImage&              image,
+                     VkDeviceMemory&       imageMemory) const;
+    VkImageView
+    createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) const;
+    [[nodiscard]] uint32_t        findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+    [[nodiscard]] VkFormat        findDepthFormat() const;
+    void                          updateUniformBuffer(uint32_t imageIndex);
+    [[nodiscard]] VkCommandBuffer beginSingleTimeCommands() const;
+    void                          endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+    void                          transitionImageLayout(VkImage       image,
+                                                        VkFormat      format,
+                                                        VkImageLayout oldLayout,
+                                                        VkImageLayout newLayout,
+                                                        uint32_t      mipLevels) const;
+    void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
     void loadModel();
     void drawFrame();
@@ -122,6 +129,7 @@ private:
     VkImage                      depthImage_ {};
     VkDeviceMemory               depthImageMemory_ {};
     VkImageView                  depthImageView_ {};
+    uint32_t                     mipLevels_ {0};
     VkImage                      textureImage_ {};
     VkDeviceMemory               textureImageMemory_ {};
     VkImageView                  textureImageView_ {};
